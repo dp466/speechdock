@@ -9,6 +9,10 @@ struct SentenceSegmentationService {
     /// Soft maximum characters per chunk; sentences longer than this are sub-split.
     var maxChunkLength: Int = 300
 
+    /// The opening chunk is kept deliberately short so the very first audio arrives fast — it is the
+    /// only chunk on the critical path (everything after it is generated while this one plays).
+    var firstChunkMaxLength: Int = 45
+
     /// Abbreviations after which a period should NOT end a sentence (safety net over NLTokenizer).
     private static let abbreviations: Set<String> = [
         "m", "mr", "mrs", "ms", "dr", "dre", "prof", "st", "ste", "mme", "mlle",
@@ -26,7 +30,26 @@ struct SentenceSegmentationService {
                 chunks.append(contentsOf: enforceMaxLength(sentence))
             }
         }
-        return chunks
+        return splitOpeningChunk(chunks)
+    }
+
+    /// If the opening chunk is long, split it once at a clause/word boundary so playback can start
+    /// sooner. Order is preserved; the remainder becomes the next chunk.
+    private func splitOpeningChunk(_ chunks: [String]) -> [String] {
+        guard let first = chunks.first, first.count > firstChunkMaxLength else { return chunks }
+
+        // Prefer a clause boundary within the limit, else the last word boundary.
+        let limitIndex = first.index(first.startIndex, offsetBy: firstChunkMaxLength)
+        let head = first[first.startIndex..<limitIndex]
+        let cut = head.lastIndex(where: { $0 == "," || $0 == ";" || $0 == ":" })
+            ?? head.lastIndex(of: " ")
+        guard let cut else { return chunks }
+
+        let opening = String(first[first.startIndex...cut]).trimmingCharacters(in: .whitespaces)
+        let rest = String(first[first.index(after: cut)...]).trimmingCharacters(in: .whitespaces)
+        guard !opening.isEmpty, !rest.isEmpty else { return chunks }
+
+        return [opening, rest] + chunks.dropFirst()
     }
 
     // MARK: - Paragraphs

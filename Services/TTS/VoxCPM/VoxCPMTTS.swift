@@ -80,9 +80,9 @@ final class VoxCPMTTS: NSObject, TTSService {
         }
     }
 
-    private func synthesizeChunk(_ chunk: VoxCPMPlaybackQueue.Chunk) async throws -> Data {
+    private func synthesizeChunk(_ chunk: VoxCPMPlaybackQueue.Chunk, quality: VoxCPMQuality? = nil) async throws -> Data {
         let options = VoxCPMGenerationOptions(
-            voice: chunk.voice, language: chunk.language, quality: settings.quality,
+            voice: chunk.voice, language: chunk.language, quality: quality ?? settings.quality,
             speed: selectedSpeed, seed: nil
         )
         return try await client.synthesize(text: chunk.text, model: selectedModel, options: options)
@@ -99,7 +99,9 @@ final class VoxCPMTTS: NSObject, TTSService {
 
         // Pre-flight the first chunk: validates connectivity (so we can fall back on failure) and seeds
         // the queue so it isn't regenerated. This throw is what triggers macOS-Native fallback.
-        let firstAudio = try await synthesizeChunk(first)
+        // The opening chunk uses the "fast" preset so audio starts as soon as possible — the timbre is
+        // pinned to a reference clip server-side, so quality presets no longer change the voice.
+        let firstAudio = try await synthesizeChunk(first, quality: .fast)
         lastAudioData = chunks.count == 1 ? firstAudio : nil  // Save Audio only for single-chunk (for now)
 
         queue.start(chunks, rate: Float(selectedSpeed), preloaded: [0: firstAudio])

@@ -60,12 +60,14 @@ final class VoxCPMHardeningTests: XCTestCase {
         let text = "Ceci est une phrase en français assez longue pour être détectée correctement. "
                  + "This is a clearly English sentence with plenty of words to detect."
         let chunks = seg.segment(text)
-        XCTAssertEqual(chunks.count, 2)
+        // The opening chunk is split short for latency, so don't assert an exact count — assert that
+        // the French part routes to the French voice and the English sentence to the English voice.
+        XCTAssertGreaterThanOrEqual(chunks.count, 2)
         let routes = chunks.map { router.route(for: $0) }
-        XCTAssertEqual(routes[0].voice, "fr-voice")
-        XCTAssertEqual(routes[0].language, .fr)
-        XCTAssertEqual(routes[1].voice, "en-voice")
-        XCTAssertEqual(routes[1].language, .en)
+        XCTAssertEqual(routes.first?.voice, "fr-voice")
+        XCTAssertEqual(routes.first?.language, .fr)
+        XCTAssertEqual(routes.last?.voice, "en-voice")
+        XCTAssertEqual(routes.last?.language, .en)
     }
 
     // MARK: - Backend unavailable
