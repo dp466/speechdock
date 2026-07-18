@@ -1306,6 +1306,12 @@ final class AppState {
         ttsService?.setPlaybackRate(rate)
     }
 
+    /// Skip to the next sentence (VoxCPM sentence queue; no-op for other providers).
+    func skipTTSSentence() { (ttsService as? VoxCPMTTS)?.skipToNextSentence() }
+
+    /// Go back one sentence (VoxCPM sentence queue; no-op for other providers).
+    func previousTTSSentence() { (ttsService as? VoxCPMTTS)?.goToPreviousSentence() }
+
     /// Stop TTS playback without resetting UI state (used internally)
     private func stopTTSPlayback() {
         ttsService?.stop()
