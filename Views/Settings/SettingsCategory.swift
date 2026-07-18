@@ -1,11 +1,11 @@
 import SwiftUI
 
-/// Categories for the unified settings sidebar
+/// Categories for the unified settings sidebar.
+///
+/// ScreenVoice is text-to-speech only — the speech-to-text, subtitle, and translation categories were
+/// removed so the interface stays focused on reading text aloud.
 enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
-    case speechToText
     case textToSpeech
-    case translation
-    case subtitle
     case shortcuts
     case textReplacement
     case appearance
@@ -16,10 +16,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
 
     var displayName: String {
         switch self {
-        case .speechToText: return NSLocalizedString("Speech-to-Text", comment: "Settings category")
-        case .textToSpeech: return NSLocalizedString("Text-to-Speech", comment: "Settings category")
-        case .translation: return NSLocalizedString("Translation", comment: "Settings category")
-        case .subtitle: return NSLocalizedString("Subtitle", comment: "Settings category")
+        case .textToSpeech: return NSLocalizedString("Voice", comment: "Settings category")
         case .shortcuts: return NSLocalizedString("Shortcuts", comment: "Settings category")
         case .textReplacement: return NSLocalizedString("Text Replacement", comment: "Settings category")
         case .appearance: return NSLocalizedString("Appearance", comment: "Settings category")
@@ -30,10 +27,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
 
     var icon: String {
         switch self {
-        case .speechToText: return "mic.fill"
         case .textToSpeech: return "speaker.wave.2.fill"
-        case .translation: return "globe"
-        case .subtitle: return "captions.bubble"
         case .shortcuts: return "keyboard"
         case .textReplacement: return "text.badge.plus"
         case .appearance: return "paintbrush"
@@ -52,5 +46,5 @@ enum SettingsCategory: String, CaseIterable, Identifiable, Hashable {
 @Observable
 @MainActor
 final class SettingsNavigation {
-    var selectedCategory: SettingsCategory? = .speechToText
+    var selectedCategory: SettingsCategory? = .textToSpeech
 }

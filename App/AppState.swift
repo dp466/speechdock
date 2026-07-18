@@ -140,7 +140,9 @@ final class AppState {
     // MARK: - TTS State
     var ttsState: TTSState = .idle
     var ttsText = ""
-    var selectedTTSProvider: TTSProvider = .macOS {
+    // ScreenVoice (local VoxCPM2) is the default engine. If it is unavailable at speak time the app
+    // degrades to macOS Native automatically — see fallbackToMacOSNative.
+    var selectedTTSProvider: TTSProvider = .voxCPM {
         didSet {
             guard !isLoadingPreferences else { return }
             // Reset voice and model to defaults for new provider
@@ -2050,10 +2052,9 @@ final class AppState {
             panelStyle = style
         }
 
-        // Subtitle mode settings
-        if UserDefaults.standard.object(forKey: "subtitleModeEnabled") != nil {
-            subtitleModeEnabled = UserDefaults.standard.bool(forKey: "subtitleModeEnabled")
-        }
+        // Subtitle mode is a speech-to-text feature and is disabled in ScreenVoice; never restore it
+        // from a previous install (its UI entry points are gone, so it could not be turned off again).
+        subtitleModeEnabled = false
         if let subtitlePositionRaw = UserDefaults.standard.string(forKey: "subtitlePosition"),
            let position = SubtitlePosition(rawValue: subtitlePositionRaw) {
             subtitlePosition = position

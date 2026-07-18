@@ -19,21 +19,15 @@ struct UnifiedSettingsView: View {
             }
             .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 220)
         } detail: {
-            detailView(for: navigation.selectedCategory ?? .speechToText)
+            detailView(for: navigation.selectedCategory ?? .textToSpeech)
         }
     }
 
     @ViewBuilder
     private func detailView(for category: SettingsCategory) -> some View {
         switch category {
-        case .speechToText:
-            STTSettingsView()
         case .textToSpeech:
             TTSSettingsView()
-        case .translation:
-            TranslationSettingsView()
-        case .subtitle:
-            SubtitleSettingsView()
         case .shortcuts:
             ShortcutSettingsView()
         case .textReplacement:

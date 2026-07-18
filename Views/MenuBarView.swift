@@ -2,13 +2,32 @@ import SwiftUI
 
 struct MenuBarView: View {
     @Environment(AppState.self) var appState
+    @State private var engine = VoxCPMEngineManager.shared
+
+    private var engineStatusColor: Color {
+        switch engine.state {
+        case .ready, .generating: return .green
+        case .starting, .loadingModel: return .orange
+        case .crashed, .unavailable: return .red
+        case .notRunning, .unknown: return .secondary
+        }
+    }
+
+    private var engineStatusText: String {
+        switch engine.state {
+        case .ready, .generating: return NSLocalizedString("ScreenVoice engine ready", comment: "Menu bar engine status")
+        case .starting, .loadingModel: return NSLocalizedString("Starting engine…", comment: "Menu bar engine status")
+        case .crashed, .unavailable: return NSLocalizedString("Engine unavailable — using macOS voice", comment: "Menu bar engine status")
+        case .notRunning, .unknown: return NSLocalizedString("Engine not running — using macOS voice", comment: "Menu bar engine status")
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             // App title and status
             HStack {
-                Image(systemName: appState.isRecording ? "mic.fill" : "waveform.badge.microphone")
-                    .foregroundColor(appState.isRecording ? .red : .accentColor)
+                Image(systemName: "speaker.wave.2.fill")
+                    .foregroundColor(.accentColor)
                     .font(.title2)
 
                 Text("Screen Voice")
@@ -16,28 +35,8 @@ struct MenuBarView: View {
 
                 Spacer()
 
-                // Status indicator
-                if appState.isRecording {
-                    Text("Recording")
-                        .font(.caption)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.red)
-                        .cornerRadius(4)
-                } else if appState.transcriptionState == .processing {
-                    HStack(spacing: 4) {
-                        ProgressView()
-                            .scaleEffect(0.5)
-                        Text("Processing")
-                            .font(.caption)
-                    }
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.orange)
-                    .cornerRadius(4)
-                } else if appState.ttsState == .speaking {
+                // Status indicator (text-to-speech only)
+                if appState.ttsState == .speaking {
                     Text("Speaking")
                         .font(.caption)
                         .foregroundColor(.white)
@@ -45,7 +44,7 @@ struct MenuBarView: View {
                         .padding(.vertical, 2)
                         .background(Color.green)
                         .cornerRadius(4)
-                } else if appState.isProcessing || appState.ttsState == .loading {
+                } else if appState.ttsState == .loading {
                     ProgressView()
                         .scaleEffect(0.6)
                 }
@@ -57,138 +56,21 @@ struct MenuBarView: View {
             Divider()
                 .padding(.vertical, 4)
 
-            // MARK: - STT Section
-            Text("Speech-to-Text")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .padding(.horizontal, 8)
-                .padding(.top, 2)
-                .padding(.bottom, 2)
-
-            // Microphone permission warning
-            if !appState.hasMicrophonePermission {
-                permissionWarning(
-                    icon: "mic.slash",
-                    text: "Microphone access required",
-                    action: openMicrophoneSettings
-                )
-            }
-
-            // STT Action button with shortcut
-            Button(action: {
-                StatusBarManager.shared.closePanel()
-                appState.toggleRecording()
-            }) {
-                HStack {
-                    Image(systemName: appState.isRecording ? "stop.fill" : "record.circle")
-                        .foregroundColor(appState.isRecording ? .red : (appState.hasMicrophonePermission ? .accentColor : .secondary))
-                        .frame(width: 20)
-                    Text(appState.isRecording ? "Stop" : "Transcription")
-                        .font(.callout)
-                        .foregroundColor(appState.hasMicrophonePermission ? .primary : .secondary)
-                    Spacer()
-                    shortcutBadge(appState.hotKeyService?.sttKeyCombo.displayString ?? "\u{2318}\u{21E7}Space")
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(MenuBarActionButtonStyle())
-            .disabled(appState.isProcessing || !appState.hasMicrophonePermission)
-
-            // Subtitle mode toggle
-            Button(action: {
-                appState.toggleSubtitleMode()
-            }) {
-                HStack {
-                    Image(systemName: appState.subtitleModeEnabled ? "captions.bubble.fill" : "captions.bubble")
-                        .foregroundColor(appState.hasMicrophonePermission ? .accentColor : .secondary)
-                        .frame(width: 20)
-                    Text("Subtitle Mode")
-                        .font(.callout)
-                        .foregroundColor(appState.hasMicrophonePermission ? .primary : .secondary)
-                    Spacer()
-                    if appState.subtitleModeEnabled {
-                        Text("On")
-                            .font(.caption)
-                            .foregroundColor(.accentColor)
-                    } else {
-                        Text("Off")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    shortcutBadge(appState.hotKeyService?.subtitleKeyCombo.displayString ?? "\u{2303}\u{2325}S")
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(MenuBarActionButtonStyle())
-            .disabled(!appState.hasMicrophonePermission)
-
-            // Floating mic button toggle
-            Button(action: {
-                appState.toggleFloatingMicButton()
-            }) {
-                HStack {
-                    Image(systemName: appState.showFloatingMicButton ? "mic.circle.fill" : "mic.circle")
-                        .foregroundColor(appState.hasMicrophonePermission ? .accentColor : .secondary)
-                        .frame(width: 20)
-                    Text("Floating Mic Button")
-                        .font(.callout)
-                        .foregroundColor(appState.hasMicrophonePermission ? .primary : .secondary)
-                    Spacer()
-                    if appState.showFloatingMicButton {
-                        Text("On")
-                            .font(.caption)
-                            .foregroundColor(.accentColor)
-                    } else {
-                        Text("Off")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    shortcutBadge(appState.hotKeyService?.quickTranscriptionKeyCombo.displayString ?? "\u{2303}\u{2325}M")
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(MenuBarActionButtonStyle())
-            .disabled(!appState.hasMicrophonePermission)
-
-            // Transcribe Audio File button
-            Button(action: {
-                StatusBarManager.shared.closePanel()
-                appState.openAudioFileForTranscription()
-            }) {
-                HStack {
-                    Image(systemName: "waveform.badge.magnifyingglass")
-                        .foregroundColor(appState.selectedRealtimeProvider.supportsFileTranscription ? .accentColor : .secondary)
-                        .frame(width: 20)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Transcribe Audio File...")
-                            .font(.callout)
-                            .foregroundColor(appState.selectedRealtimeProvider.supportsFileTranscription ? .primary : .secondary)
-                        Text(appState.selectedRealtimeProvider.fileTranscriptionDescription)
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                    }
+            // MARK: - Engine status (ScreenVoice local engine)
+            if appState.selectedTTSProvider == .voxCPM {
+                HStack(spacing: 7) {
+                    Circle()
+                        .fill(engineStatusColor)
+                        .frame(width: 7, height: 7)
+                    Text(engineStatusText)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                     Spacer()
                 }
-                .contentShape(Rectangle())
+                .padding(.horizontal, 12)
+                .padding(.bottom, 6)
+                .task { await engine.refreshHealth() }
             }
-            .buttonStyle(MenuBarActionButtonStyle())
-            .disabled(appState.isRecording || appState.transcriptionState == .transcribingFile)
-
-            // Transcription History submenu
-            TranscriptionHistoryMenu(appState: appState)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-
-            Divider()
-                .padding(.vertical, 4)
-
-            // MARK: - TTS Section
-            Text("Text-to-Speech")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .padding(.horizontal, 8)
-                .padding(.top, 2)
-                .padding(.bottom, 2)
 
             // Accessibility permission warning
             if !appState.hasAccessibilityPermission {
@@ -220,7 +102,7 @@ struct MenuBarView: View {
                     Image(systemName: "speaker.wave.2")
                         .foregroundColor(appState.hasAccessibilityPermission ? .accentColor : .secondary)
                         .frame(width: 20)
-                    Text("Text to Speech")
+                    Text("Read Selected Text")
                         .font(.callout)
                         .foregroundColor(appState.hasAccessibilityPermission ? .primary : .secondary)
                     Spacer()
@@ -258,7 +140,7 @@ struct MenuBarView: View {
                     Image(systemName: "text.viewfinder")
                         .foregroundColor(ocrEnabled ? .accentColor : .secondary)
                         .frame(width: 20)
-                    Text("OCR Region to TTS")
+                    Text("Read Screen Region")
                         .font(.callout)
                         .foregroundColor(ocrEnabled ? .primary : .secondary)
                     Spacer()

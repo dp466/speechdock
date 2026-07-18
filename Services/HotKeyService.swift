@@ -163,13 +163,13 @@ final class HotKeyService {
         }
     }
 
+    /// ScreenVoice is text-to-speech only, so the speech-to-text shortcuts (transcription, subtitle
+    /// mode, quick transcription) are intentionally NOT registered — they would otherwise still fire
+    /// even though their menu entries are gone.
     func registerAllHotKeys() {
-        registerHotKey()
         registerTTSHotKey()
         registerOCRHotKey()
-        registerSubtitleHotKey()
         registerShortcutHUDHotKey()
-        registerQuickTranscriptionHotKey()
     }
 
     func unregisterAllHotKeys() {
