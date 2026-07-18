@@ -198,21 +198,6 @@ extension LanguageCode {
         commonLanguages.filter { $0 != .portuguese }
     }
 
-    /// Get supported languages for a given STT provider
-    static func supportedLanguages(for provider: RealtimeSTTProvider) -> [LanguageCode] {
-        switch provider {
-        case .macOS:
-            return macOSAvailableLanguages()
-        case .openAI:
-            return openAILanguages
-        case .gemini:
-            return geminiLanguages
-        case .elevenLabs:
-            return elevenLabsLanguages
-        case .grok:
-            return commonLanguages  // Grok supports 100+ languages with auto-detection
-        }
-    }
 
     /// Get available languages from macOS Speech Recognition
     /// Shows all SFSpeechRecognizer-supported languages.
@@ -251,19 +236,4 @@ extension LanguageCode {
         return sorted
     }
 
-    /// Check if Auto detection is supported for a provider
-    static func supportsAutoDetection(for provider: RealtimeSTTProvider) -> Bool {
-        switch provider {
-        case .macOS:
-            return true  // Uses system locale when Auto is selected
-        case .openAI, .gemini, .elevenLabs, .grok:
-            return true
-        }
-    }
-
-    /// Get default language for a provider
-    /// All providers currently support Auto detection
-    static func defaultLanguage(for provider: RealtimeSTTProvider) -> LanguageCode {
-        return .auto
-    }
 }

@@ -5,12 +5,9 @@ import os.log
 private let logger = Logger(subsystem: "com.speechdock", category: "HotKey")
 
 protocol HotKeyServiceDelegate: AnyObject {
-    func hotKeyPressed()
     func ttsHotKeyPressed()
     func ocrHotKeyPressed()
-    func subtitleHotKeyPressed()
     func shortcutHUDHotKeyPressed()
-    func quickTranscriptionHotKeyPressed()
 }
 
 final class HotKeyService {
@@ -28,7 +25,6 @@ final class HotKeyService {
         didSet {
             guard !isLoadingShortcuts else { return }
             saveShortcuts()
-            registerHotKey()
         }
     }
 
@@ -52,7 +48,6 @@ final class HotKeyService {
         didSet {
             guard !isLoadingShortcuts else { return }
             saveShortcuts()
-            registerSubtitleHotKey()
         }
     }
 
@@ -68,7 +63,6 @@ final class HotKeyService {
         didSet {
             guard !isLoadingShortcuts else { return }
             saveShortcuts()
-            registerQuickTranscriptionHotKey()
         }
     }
 
@@ -83,19 +77,6 @@ final class HotKeyService {
         loadShortcuts()
     }
 
-    func registerHotKey() {
-        // Remove existing hotkey
-        sttHotKey = nil
-
-        // Create new hotkey
-        sttHotKey = HotKey(key: sttKeyCombo.key, modifiers: sttKeyCombo.modifiers)
-        logger.info("STT HotKey registered: \(self.sttKeyCombo.displayString)")
-
-        sttHotKey?.keyDownHandler = { [weak self] in
-            logger.info("STT HotKey pressed!")
-            self?.delegate?.hotKeyPressed()
-        }
-    }
 
     func registerTTSHotKey() {
         // Remove existing hotkey
@@ -125,19 +106,6 @@ final class HotKeyService {
         }
     }
 
-    func registerSubtitleHotKey() {
-        // Remove existing hotkey
-        subtitleHotKey = nil
-
-        // Create new hotkey
-        subtitleHotKey = HotKey(key: subtitleKeyCombo.key, modifiers: subtitleKeyCombo.modifiers)
-        logger.info("Subtitle HotKey registered: \(self.subtitleKeyCombo.displayString)")
-
-        subtitleHotKey?.keyDownHandler = { [weak self] in
-            logger.info("Subtitle HotKey pressed!")
-            self?.delegate?.subtitleHotKeyPressed()
-        }
-    }
 
     func registerShortcutHUDHotKey() {
         shortcutHUDHotKey = nil
@@ -151,17 +119,6 @@ final class HotKeyService {
         }
     }
 
-    func registerQuickTranscriptionHotKey() {
-        quickTranscriptionHotKey = nil
-
-        quickTranscriptionHotKey = HotKey(key: quickTranscriptionKeyCombo.key, modifiers: quickTranscriptionKeyCombo.modifiers)
-        logger.info("QuickTranscription HotKey registered: \(self.quickTranscriptionKeyCombo.displayString)")
-
-        quickTranscriptionHotKey?.keyDownHandler = { [weak self] in
-            logger.info("QuickTranscription HotKey pressed!")
-            self?.delegate?.quickTranscriptionHotKeyPressed()
-        }
-    }
 
     /// ScreenVoice is text-to-speech only, so the speech-to-text shortcuts (transcription, subtitle
     /// mode, quick transcription) are intentionally NOT registered — they would otherwise still fire

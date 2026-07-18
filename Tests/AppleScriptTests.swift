@@ -123,25 +123,6 @@ final class AppleScriptTests: XCTestCase {
         XCTAssertEqual(AppleScriptErrorCode.ttsTextTooShort.rawValue, 1018)
     }
 
-    func testErrorCode_STTRange() {
-        // STT errors should be in 1020-1029 range
-        XCTAssertEqual(AppleScriptErrorCode.sttProviderNotSupported.rawValue, 1020)
-        XCTAssertEqual(AppleScriptErrorCode.sttFileNotFound.rawValue, 1021)
-        XCTAssertEqual(AppleScriptErrorCode.sttUnsupportedFormat.rawValue, 1022)
-        XCTAssertEqual(AppleScriptErrorCode.sttFileTooLarge.rawValue, 1023)
-        XCTAssertEqual(AppleScriptErrorCode.sttAlreadyRecording.rawValue, 1024)
-        XCTAssertEqual(AppleScriptErrorCode.sttTranscriptionFailed.rawValue, 1025)
-        XCTAssertEqual(AppleScriptErrorCode.sttNotRecording.rawValue, 1026)
-    }
-
-    func testErrorCode_TranslationRange() {
-        // Translation errors should be in 1030-1039 range
-        XCTAssertEqual(AppleScriptErrorCode.translationEmptyText.rawValue, 1030)
-        XCTAssertEqual(AppleScriptErrorCode.translationInvalidLanguage.rawValue, 1031)
-        XCTAssertEqual(AppleScriptErrorCode.translationFailed.rawValue, 1032)
-        XCTAssertEqual(AppleScriptErrorCode.translationProviderUnavailable.rawValue, 1033)
-    }
-
     func testErrorCode_ProviderRange() {
         // Provider errors should be in 1040-1049 range
         XCTAssertEqual(AppleScriptErrorCode.invalidProviderName.rawValue, 1040)
@@ -214,40 +195,7 @@ final class AppleScriptTests: XCTestCase {
         XCTAssertNil(TTSProvider(rawValue: ""))
     }
 
-    func testSTTProviderRawValues() {
-        XCTAssertEqual(RealtimeSTTProvider(rawValue: "macOS"), .macOS)
-        XCTAssertEqual(RealtimeSTTProvider(rawValue: "OpenAI"), .openAI)
-        XCTAssertEqual(RealtimeSTTProvider(rawValue: "Gemini"), .gemini)
-        XCTAssertEqual(RealtimeSTTProvider(rawValue: "ElevenLabs"), .elevenLabs)
-        XCTAssertEqual(RealtimeSTTProvider(rawValue: "Grok"), .grok)
-        XCTAssertNil(RealtimeSTTProvider(rawValue: "invalid"))
-    }
-
-    func testTranslationProviderRawValues() {
-        XCTAssertEqual(TranslationProvider(rawValue: "macOS"), .macOS)
-        XCTAssertEqual(TranslationProvider(rawValue: "OpenAI"), .openAI)
-        XCTAssertEqual(TranslationProvider(rawValue: "Gemini"), .gemini)
-        XCTAssertEqual(TranslationProvider(rawValue: "Grok"), .grok)
-        XCTAssertNil(TranslationProvider(rawValue: "ElevenLabs"))  // not a translation provider
-        XCTAssertNil(TranslationProvider(rawValue: "invalid"))
-    }
-
     // MARK: - File Transcription Support Tests
-
-    func testFileTranscriptionSupport() {
-        // Providers that support file transcription
-        XCTAssertTrue(RealtimeSTTProvider.openAI.supportsFileTranscription)
-        XCTAssertTrue(RealtimeSTTProvider.gemini.supportsFileTranscription)
-        XCTAssertTrue(RealtimeSTTProvider.elevenLabs.supportsFileTranscription)
-
-        // Providers that do NOT support file transcription
-        if #available(macOS 26, *) {
-            XCTAssertTrue(RealtimeSTTProvider.macOS.supportsFileTranscription)
-        } else {
-            XCTAssertFalse(RealtimeSTTProvider.macOS.supportsFileTranscription)
-        }
-        XCTAssertFalse(RealtimeSTTProvider.grok.supportsFileTranscription)
-    }
 
     // MARK: - API Key Requirement Tests
 
@@ -257,21 +205,6 @@ final class AppleScriptTests: XCTestCase {
         XCTAssertTrue(TTSProvider.gemini.requiresAPIKey)
         XCTAssertTrue(TTSProvider.elevenLabs.requiresAPIKey)
         XCTAssertTrue(TTSProvider.grok.requiresAPIKey)
-    }
-
-    func testSTTProviderRequiresAPIKey() {
-        XCTAssertFalse(RealtimeSTTProvider.macOS.requiresAPIKey)
-        XCTAssertTrue(RealtimeSTTProvider.openAI.requiresAPIKey)
-        XCTAssertTrue(RealtimeSTTProvider.gemini.requiresAPIKey)
-        XCTAssertTrue(RealtimeSTTProvider.elevenLabs.requiresAPIKey)
-        XCTAssertTrue(RealtimeSTTProvider.grok.requiresAPIKey)
-    }
-
-    func testTranslationProviderRequiresAPIKey() {
-        XCTAssertFalse(TranslationProvider.macOS.requiresAPIKey)
-        XCTAssertTrue(TranslationProvider.openAI.requiresAPIKey)
-        XCTAssertTrue(TranslationProvider.gemini.requiresAPIKey)
-        XCTAssertTrue(TranslationProvider.grok.requiresAPIKey)
     }
 
     // MARK: - Speed Clamping Tests

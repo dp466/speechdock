@@ -79,43 +79,7 @@ extension NSApplication {
         }
     }
 
-    // MARK: STT Provider
 
-    @objc var scriptSTTProvider: String {
-        get {
-            onMainSync {
-                AppState.shared.selectedRealtimeProvider.rawValue
-            }
-        }
-        set {
-            onMainAsync {
-                guard let provider = RealtimeSTTProvider(rawValue: newValue) else {
-                    logger.warning("Invalid STT provider name: \(newValue, privacy: .public). Valid values: \(RealtimeSTTProvider.allCases.map { $0.rawValue }.joined(separator: ", "), privacy: .public)")
-                    return
-                }
-                AppState.shared.selectedRealtimeProvider = provider
-            }
-        }
-    }
-
-    // MARK: Translation Provider
-
-    @objc var scriptTranslationProvider: String {
-        get {
-            onMainSync {
-                AppState.shared.translationProvider.rawValue
-            }
-        }
-        set {
-            onMainAsync {
-                guard let provider = TranslationProvider(rawValue: newValue) else {
-                    logger.warning("Invalid translation provider name: \(newValue, privacy: .public). Valid values: \(TranslationProvider.allCases.map { $0.rawValue }.joined(separator: ", "), privacy: .public)")
-                    return
-                }
-                AppState.shared.translationProvider = provider
-            }
-        }
-    }
 
     // MARK: Read-only State
 
@@ -125,26 +89,5 @@ extension NSApplication {
         }
     }
 
-    @objc var scriptIsRecording: Bool {
-        onMainSync {
-            AppState.shared.isRecording
-        }
-    }
 
-    // MARK: Quick Transcription State
-
-    @objc var scriptShowQuickTranscription: Bool {
-        get {
-            onMainSync {
-                AppState.shared.showFloatingMicButton
-            }
-        }
-        set {
-            onMainAsync {
-                if newValue != AppState.shared.showFloatingMicButton {
-                    AppState.shared.toggleFloatingMicButton()
-                }
-            }
-        }
-    }
 }

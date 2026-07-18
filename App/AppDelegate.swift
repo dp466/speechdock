@@ -125,9 +125,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return MainActor.assumeIsolated {
                 let appState = AppState.shared
 
-                // Clean up any active recordings
-                appState.cancelRecording()
-
                 // Stop TTS if active
                 if appState.ttsState == .speaking || appState.ttsState == .loading {
                     appState.stopTTS()
@@ -135,7 +132,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
                 // Close all visible panels/windows
                 appState.floatingWindowManager.hideFloatingWindow()
-                SubtitleOverlayManager.shared.hide()
                 WindowManager.shared.closeSettingsWindow()
                 PermissionSetupController.shared.dismiss()
                 StatusBarManager.shared.closePanel()
@@ -147,7 +143,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Explicit quit (Quit button or app menu) — allow termination with cleanup
         return MainActor.assumeIsolated {
             let appState = AppState.shared
-            appState.cancelRecording()
             if appState.ttsState == .speaking || appState.ttsState == .loading {
                 appState.stopTTS()
             }

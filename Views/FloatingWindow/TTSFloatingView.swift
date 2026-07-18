@@ -462,10 +462,7 @@ struct TTSFloatingView: View {
 
     // Whether the text editor should be disabled (read-only but still scrollable)
     private var isEditorDisabled: Bool {
-        // Disable when speaking/loading/paused, translating, or showing translated text
-        if appState.translationState.isTranslating || appState.translationState.isTranslated {
-            return true
-        }
+        // Disable while speaking/loading/paused
         switch appState.ttsState {
         case .speaking, .loading, .paused:
             return true
@@ -650,42 +647,11 @@ struct TTSFloatingView: View {
                 forceTextUpdate = true
                 // Resign first responder to allow text update through ScrollableTextView
                 NSApp.keyWindow?.makeFirstResponder(nil)
-                // Reset translation state when new text comes in
-                if appState.translationState.isTranslated {
-                    appState.translationState = .idle
-                    appState.originalTextBeforeTranslation = ""
-                }
                 editableText = newValue
                 // Reset force flag after a brief delay to allow SwiftUI to process the update
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     forceTextUpdate = false
                 }
-            }
-        }
-        .onChange(of: appState.translationState) { oldState, newState in
-            // Handle translation state changes
-            switch newState {
-            case .translated(let translatedText):
-                // Resign first responder to allow text update through ScrollableTextView
-                NSApp.keyWindow?.makeFirstResponder(nil)
-                // Show translated text
-                editableText = translatedText
-                dprint("TTSFloatingView: Translation complete, editableText updated to length \(translatedText.count)")
-
-            case .idle:
-                // When reverting to original, restore original text
-                if oldState.isTranslated && !appState.originalTextBeforeTranslation.isEmpty {
-                    // Resign first responder to allow text update
-                    NSApp.keyWindow?.makeFirstResponder(nil)
-                    editableText = appState.originalTextBeforeTranslation
-                    dprint("TTSFloatingView: Reverted to original text")
-
-                }
-            case .error(let message):
-                dprint("TTSFloatingView: Translation error: \(message)")
-
-            case .translating:
-                break
             }
         }
         // Font size shortcuts (invisible buttons)
@@ -780,7 +746,7 @@ struct TTSFloatingView: View {
                 highlightRange: nil,
                 enableHighlight: false,
                 fontSize: CGFloat(appState.panelTextFontSize),
-                isShowingTranslation: appState.translationState.isTranslated,
+                isShowingTranslation: false,
                 forceTextUpdate: forceTextUpdate
             )
             .cornerRadius(8)
@@ -794,10 +760,6 @@ struct TTSFloatingView: View {
                     }
                 }
             )
-            .overlay(alignment: .bottomLeading) {
-                // Translation controls (left side)
-                translationControlsView
-            }
             .overlay(alignment: .bottomTrailing) {
                 // Floating action buttons (Clear, Spell Check)
                 textAreaFloatingButtons
@@ -995,9 +957,7 @@ struct TTSFloatingView: View {
                         .foregroundColor(.secondary)
                 }
                 .buttonStyle(.plain)
-                .disabled(appState.translationState.isTranslated)
-                .opacity(appState.translationState.isTranslated ? 0.5 : 1.0)
-                .help(appState.translationState.isTranslated ? "Press Original to edit" : "Clear Text")
+                .help("Clear Text")
             }
             .padding(6)
             .background(Color(.windowBackgroundColor))
@@ -1005,33 +965,6 @@ struct TTSFloatingView: View {
             .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
             .padding(8)
         }
-    }
-
-    /// Translation controls (left side of text area)
-    @ViewBuilder
-    private var translationControlsView: some View {
-        let isActive = appState.ttsState == .speaking || appState.ttsState == .loading
-        if !isActive {
-            TranslationControls(
-                appState: appState,
-                text: displayText,
-                onTranslate: { translatedText in
-                    editableText = translatedText
-                },
-                applySameLanguageGuard: false
-            )
-            .padding(8)
-        }
-    }
-
-    /// Text to use for translation - always use original text, not translated text
-    private var displayText: String {
-        // When already translated, use the saved original for re-translation
-        // This prevents originalTextBeforeTranslation from being corrupted
-        if appState.translationState.isTranslated && !appState.originalTextBeforeTranslation.isEmpty {
-            return appState.originalTextBeforeTranslation
-        }
-        return editableText
     }
 
     /// Show the macOS spelling panel and check spelling

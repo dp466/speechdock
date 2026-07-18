@@ -79,70 +79,6 @@ final class FloatingWindowManager: ObservableObject {
         }
     }
 
-    func showFloatingWindow(
-        appState: AppState,
-        onConfirm: @escaping (String) -> Void,
-        onCancel: @escaping () -> Void
-    ) {
-        // Close spelling panel if open
-        NSSpellChecker.shared.spellingPanel.orderOut(nil)
-
-        // Save frame before closing existing window
-        saveWindowFrame()
-
-        // Close any existing window first and recreate with current style
-        floatingWindow?.orderOut(nil)
-        floatingWindow = nil
-
-        currentWindowStyle = appState.panelStyle
-        floatingWindow = createWindow(style: appState.panelStyle, title: "Transcription", size: Self.sttWindowSize)
-
-        // Store cancel callback and appState for use when window is closed externally
-        storedOnCancel = onCancel
-        currentAppState = appState
-
-        let contentView = TranscriptionFloatingView(
-            appState: appState,
-            onConfirm: onConfirm,
-            onCancel: onCancel
-        )
-
-        // Remember the currently active app before showing our window
-        previousApp = NSWorkspace.shared.frontmostApplication
-
-        // Get available windows and select the frontmost one by default
-        refreshAvailableWindows()
-
-        floatingWindow?.contentView = NSHostingView(rootView: contentView)
-        restoreWindowFrame()
-
-        // Set up observer to handle window close (stop recording if active)
-        setupWindowCloseObserver()
-
-        // Become regular app to ensure proper window activation
-        // This is essential for accessory apps to receive keyboard focus
-        NSApp.setActivationPolicy(.regular)
-
-        // For standard window mode, give macOS time to process the activation policy change
-        // This ensures the Dock icon appears before the window is shown
-        if appState.panelStyle == .standardWindow {
-            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.03))
-        }
-
-        // Activate app first, then show window
-        NSApp.activate(ignoringOtherApps: true)
-
-        // Show window and bring to front
-        floatingWindow?.orderFrontRegardless()
-        floatingWindow?.makeKeyAndOrderFront(nil)
-        isVisible = true
-
-        // Activate window with retry (needed for apps launched via `open` command)
-        activateWindowWithRetry()
-
-        // Set up Cmd+W keyboard shortcut handler (SwiftUI shortcuts don't work in borderless windows)
-        setupKeyboardEventMonitor()
-    }
 
     /// Refresh the list of available windows
     func refreshAvailableWindows() {
@@ -560,9 +496,6 @@ final class FloatingWindowManager: ObservableObject {
 
                 // Additional safety: directly stop via AppState
                 if let appState = self.currentAppState {
-                    if appState.isRecording {
-                        appState.cancelRecording()
-                    }
                     if appState.ttsState == .speaking || appState.ttsState == .loading {
                         appState.stopTTS()
                     }
@@ -616,9 +549,6 @@ final class FloatingWindowManager: ObservableObject {
 
         // Additional safety: directly stop via AppState
         if let appState = currentAppState {
-            if appState.isRecording {
-                appState.cancelRecording()
-            }
             if appState.ttsState == .speaking || appState.ttsState == .loading {
                 appState.stopTTS()
             }

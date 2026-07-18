@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE dictionary SYSTEM "file://localhost/System/Library/DTDs/sdef.dtd">
 <dictionary title="SpeechDock Terminology">
-    <suite name="SpeechDock Suite" code="SDck" description="Commands for controlling SpeechDock text-to-speech, transcription, and translation.">
+    <suite name="SpeechDock Suite" code="SDck" description="Commands for controlling ScreenVoice text-to-speech.">
 
         <!-- Classes -->
         <class name="application" code="capp" description="The SpeechDock application.">
@@ -15,20 +15,8 @@
             <property name="tts speed" code="TTSs" type="real" access="rw" description="The TTS playback speed (0.25 to 4.0, default 1.0).">
                 <cocoa key="scriptTTSSpeed"/>
             </property>
-            <property name="stt provider" code="STTp" type="text" access="rw" description="The current STT provider (macOS, OpenAI, Gemini, ElevenLabs, Grok).">
-                <cocoa key="scriptSTTProvider"/>
-            </property>
-            <property name="translation provider" code="TrPv" type="text" access="rw" description="The current translation provider (macOS, OpenAI, Gemini, Grok).">
-                <cocoa key="scriptTranslationProvider"/>
-            </property>
             <property name="is speaking" code="IsSp" type="boolean" access="r" description="Whether TTS is currently speaking or paused.">
                 <cocoa key="scriptIsSpeaking"/>
-            </property>
-            <property name="is recording" code="IsRc" type="boolean" access="r" description="Whether STT is currently recording.">
-                <cocoa key="scriptIsRecording"/>
-            </property>
-            <property name="quick transcription visible" code="QTVs" type="boolean" access="rw" description="Whether the quick transcription floating button is visible.">
-                <cocoa key="scriptShowQuickTranscription"/>
             </property>
         </class>
 
@@ -60,21 +48,8 @@
         </command>
 
         <!-- Translation Command -->
-        <command name="translate" code="SDckTrTx" description="Translate text to the specified language using the current translation provider.">
-            <cocoa class="SpeechDock.TranslateCommand"/>
-            <direct-parameter type="text" description="The text to translate."/>
-            <parameter name="to" code="TrTo" type="text" description="The target language name (e.g. Japanese, French, German).">
-                <cocoa key="toLanguage"/>
-            </parameter>
-            <result type="text" description="The translated text."/>
-        </command>
 
         <!-- Transcription Command -->
-        <command name="transcribe file" code="SDckTrFi" description="Transcribe an audio file using the current STT provider.">
-            <cocoa class="SpeechDock.TranscribeFileCommand"/>
-            <direct-parameter type="text" description="The POSIX path of the audio file to transcribe."/>
-            <result type="text" description="The transcribed text."/>
-        </command>
 
         <!-- Clipboard Commands -->
         <command name="copy to clipboard" code="SDckCpCl" description="Copy the given text to the system clipboard.">
@@ -93,31 +68,12 @@
         </command>
 
         <!-- Quick Transcription Commands -->
-        <command name="show quick transcription" code="SDckShQT" description="Show the floating mic button without starting recording.">
-            <cocoa class="SpeechDock.ShowQuickTranscriptionCommand"/>
-        </command>
 
-        <command name="start quick transcription" code="SDckStQT" description="Start quick transcription using the floating mic button. Transcribed text is pasted when stopped.">
-            <cocoa class="SpeechDock.StartQuickTranscriptionCommand"/>
-        </command>
 
-        <command name="stop quick transcription" code="SDckSpQT" description="Stop quick transcription and return the transcribed text.">
-            <cocoa class="SpeechDock.StopQuickTranscriptionCommand"/>
-            <result type="text" description="The transcribed text, or empty if nothing was transcribed."/>
-        </command>
 
-        <command name="toggle quick transcription" code="SDckTgQT" description="Toggle quick transcription recording on/off.">
-            <cocoa class="SpeechDock.ToggleQuickTranscriptionCommand"/>
-        </command>
 
         <!-- STT Panel Commands -->
-        <command name="show stt panel" code="SDckShST" description="Show the STT (speech-to-text) panel. If auto-start is enabled, recording begins automatically.">
-            <cocoa class="SpeechDock.ShowSTTPanelCommand"/>
-        </command>
 
-        <command name="toggle stt panel" code="SDckTgST" description="Toggle the STT panel visibility. If panel is visible and recording, stops recording and closes panel.">
-            <cocoa class="SpeechDock.ToggleSTTPanelCommand"/>
-        </command>
 
         <!-- TTS Panel Commands -->
         <command name="show tts panel" code="SDckShTT" description="Show the TTS (text-to-speech) panel for manual text input.">
@@ -129,13 +85,7 @@
         </command>
 
         <!-- Subtitle Commands -->
-        <command name="show subtitle" code="SDckShSu" description="Enable subtitle mode and start recording. Transcribed text appears as an overlay.">
-            <cocoa class="SpeechDock.ShowSubtitleCommand"/>
-        </command>
 
-        <command name="toggle subtitle" code="SDckTgSu" description="Toggle subtitle mode on/off.">
-            <cocoa class="SpeechDock.ToggleSubtitleCommand"/>
-        </command>
 
         <!-- OCR Command -->
         <command name="start ocr" code="SDckStOC" description="Start OCR region selection. Selected text is sent to the TTS panel.">

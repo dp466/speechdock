@@ -157,8 +157,6 @@ final class StatusBarManager: NSObject {
     }
 
     private func getCurrentIconState(for appState: AppState) -> Int {
-        if appState.isRecording { return 1 }
-        if appState.transcriptionState == .processing { return 2 }
         if appState.ttsState == .speaking { return 3 }
         if appState.ttsState == .loading { return 4 }
         return 0
@@ -173,12 +171,7 @@ final class StatusBarManager: NSObject {
 
         // Determine the color based on state
         let color: NSColor
-        if appState.isRecording {
-            let pulseAlpha = animated ? 0.5 + 0.5 * sin(animationPhase) : 1.0
-            color = NSColor.systemRed.withAlphaComponent(CGFloat(pulseAlpha))
-        } else if appState.transcriptionState == .processing {
-            color = NSColor.systemRed.withAlphaComponent(0.6)
-        } else if appState.ttsState == .speaking {
+        if appState.ttsState == .speaking {
             let pulseAlpha = animated ? 0.5 + 0.5 * sin(animationPhase) : 1.0
             color = NSColor.systemBlue.withAlphaComponent(CGFloat(pulseAlpha))
         } else if appState.ttsState == .loading {
