@@ -541,7 +541,7 @@ struct VoxCPMEngineSection: View {
             TextField("Launch command (optional)", text: $settings.serverLaunchCommand)
                 .font(.caption)
         } header: {
-            Text("VoxCPM2 Local Engine")
+            Text("ScreenVoice Engine")
         } footer: {
             Text("Fully local neural TTS. Text and audio never leave your Mac. If the engine is unavailable, playback falls back to macOS Native.")
                 .font(.caption2)

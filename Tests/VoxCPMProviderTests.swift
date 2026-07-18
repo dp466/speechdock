@@ -14,7 +14,7 @@ final class VoxCPMProviderTests: XCTestCase {
     }
 
     func testVoxCPMProviderMetadata() {
-        XCTAssertEqual(TTSProvider.voxCPM.rawValue, "VoxCPM2 Local")
+        XCTAssertEqual(TTSProvider.voxCPM.rawValue, "ScreenVoice")
         XCTAssertFalse(TTSProvider.voxCPM.requiresAPIKey)
         XCTAssertTrue(TTSProvider.voxCPM.isLocal)
         XCTAssertNil(TTSProvider.voxCPM.envKeyName)

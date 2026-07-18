@@ -65,9 +65,9 @@ targets:
       configs:
         Debug:
           PRODUCT_BUNDLE_IDENTIFIER: com.speechdock.app.dev
-          SPEECHDOCK_DISPLAY_NAME: "SpeechDock Dev"
+          SPEECHDOCK_DISPLAY_NAME: "Screen Voice Dev"
         Release:
-          SPEECHDOCK_DISPLAY_NAME: SpeechDock
+          SPEECHDOCK_DISPLAY_NAME: Screen Voice
     dependencies:
       - package: HotKey
       - package: Sparkle

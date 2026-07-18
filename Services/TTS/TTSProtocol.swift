@@ -150,7 +150,7 @@ protocol TTSDelegate: AnyObject {
 /// TTS provider types
 enum TTSProvider: String, CaseIterable, Identifiable, Codable {
     case macOS = "macOS"
-    case voxCPM = "VoxCPM2 Local"
+    case voxCPM = "ScreenVoice"
     case openAI = "OpenAI"
     case gemini = "Gemini"
     case elevenLabs = "ElevenLabs"

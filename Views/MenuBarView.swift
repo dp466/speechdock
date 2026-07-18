@@ -11,7 +11,7 @@ struct MenuBarView: View {
                     .foregroundColor(appState.isRecording ? .red : .accentColor)
                     .font(.title2)
 
-                Text("SpeechDock")
+                Text("Screen Voice")
                     .font(.headline)
 
                 Spacer()
@@ -230,6 +230,23 @@ struct MenuBarView: View {
             }
             .buttonStyle(MenuBarActionButtonStyle())
             .disabled(appState.ttsState == .speaking || appState.ttsState == .loading || !appState.hasAccessibilityPermission)
+
+            // Open an empty TTS panel to type or paste text (no selection needed)
+            Button(action: {
+                StatusBarManager.shared.closePanel()
+                appState.showTTSPanel()
+            }) {
+                HStack {
+                    Image(systemName: "text.bubble")
+                        .foregroundColor(.accentColor)
+                        .frame(width: 20)
+                    Text("Open TTS Panel")
+                        .font(.callout)
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(MenuBarActionButtonStyle())
 
             // OCR to TTS Action button with shortcut
             Button(action: {
