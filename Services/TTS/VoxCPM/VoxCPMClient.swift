@@ -121,6 +121,40 @@ struct VoxCPMClient {
         }
     }
 
+    /// `POST /v1/voices/import` → the created profile. Reference audio is sent base64 (kept on-Mac).
+    func importVoice(displayName: String, language: String, kind: String,
+                     audioData: Data?, filename: String?, transcript: String?,
+                     control: String?, notes: String?, consentConfirmed: Bool) async throws -> VoxCPMVoiceProfile {
+        var payload: [String: Any] = [
+            "displayName": displayName,
+            "language": language,
+            "kind": kind,
+            "consentConfirmed": consentConfirmed,
+        ]
+        if let audioData { payload["referenceAudioBase64"] = audioData.base64EncodedString() }
+        if let filename { payload["filename"] = filename }
+        if let transcript, !transcript.isEmpty { payload["optionalReferenceTranscript"] = transcript }
+        if let control, !control.isEmpty { payload["control"] = control }
+        if let notes, !notes.isEmpty { payload["notes"] = notes }
+
+        let body = try JSONSerialization.data(withJSONObject: payload)
+        let req = try makeRequest(path: "v1/voices/import", method: "POST", body: body, timeout: 60)
+        let (data, http) = try await send(req)
+        try Self.throwIfError(http, data)
+        do {
+            return try JSONDecoder().decode(VoxCPMVoiceProfile.self, from: data)
+        } catch {
+            throw VoxCPMError.decoding(error.localizedDescription)
+        }
+    }
+
+    /// `DELETE /v1/voices/{id}`.
+    func deleteVoice(id: String) async throws {
+        let req = try makeRequest(path: "v1/voices/\(id)", method: "DELETE")
+        let (data, http) = try await send(req)
+        try Self.throwIfError(http, data)
+    }
+
     /// `POST /v1/audio/speech` → WAV bytes.
     func synthesize(text: String, model: String, options: VoxCPMGenerationOptions) async throws -> Data {
         let body = try JSONSerialization.data(withJSONObject: options.requestBody(input: text, model: model))

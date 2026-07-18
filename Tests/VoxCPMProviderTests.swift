@@ -171,6 +171,33 @@ final class VoxCPMProviderTests: XCTestCase {
         }
     }
 
+    func testClientImportVoiceDecodesProfile() async throws {
+        MockURLProtocol.handler = { req in
+            XCTAssertTrue(req.url!.path.hasSuffix("/v1/voices/import"))
+            XCTAssertEqual(req.value(forHTTPHeaderField: "Authorization"), "Bearer tok")
+            let json = #"{"id":"voice-abc","displayName":"Québec FR","language":"fr-CA","kind":"clone","hasReferenceAudio":true}"#
+            return (Self.http(req, 201), Data(json.utf8))
+        }
+        let client = VoxCPMClient(baseURL: URL(string: "http://127.0.0.1:8757")!,
+                                  tokenProvider: { "tok" }, session: mockSession())
+        let profile = try await client.importVoice(
+            displayName: "Québec FR", language: "fr-CA", kind: "clone",
+            audioData: Data([1, 2, 3]), filename: "q.wav", transcript: nil,
+            control: nil, notes: nil, consentConfirmed: true)
+        XCTAssertEqual(profile.id, "voice-abc")
+        XCTAssertTrue(profile.hasReferenceAudio)
+    }
+
+    func testClientDeleteVoiceSucceedsOn204() async throws {
+        MockURLProtocol.handler = { req in
+            XCTAssertEqual(req.httpMethod, "DELETE")
+            return (Self.http(req, 204), Data())
+        }
+        let client = VoxCPMClient(baseURL: URL(string: "http://127.0.0.1:8757")!,
+                                  tokenProvider: { "tok" }, session: mockSession())
+        try await client.deleteVoice(id: "voice-abc") // must not throw
+    }
+
     private static func http(_ req: URLRequest, _ code: Int) -> HTTPURLResponse {
         HTTPURLResponse(url: req.url!, statusCode: code, httpVersion: nil, headerFields: nil)!
     }

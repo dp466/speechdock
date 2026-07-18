@@ -72,11 +72,20 @@ final class VoxCPMTTS: NSObject, TTSService {
         guard !text.isEmpty else { throw TTSError.noTextProvided }
         stop()
 
-        let language = VoxCPMLanguage(rawValue: selectedLanguage) ?? .auto
+        // Autonomous routing: in "Automatic" mode the language is detected locally (no user choice);
+        // explicit fr/en modes force that language. Falls back to the picked voice when ambiguous.
+        let router = VoxCPMLanguageRouter(
+            languageMode: settings.languageMode,
+            defaultFrenchVoice: settings.defaultFrenchVoice,
+            defaultEnglishVoice: settings.defaultEnglishVoice,
+            fallbackVoice: selectedVoice.isEmpty ? "default" : selectedVoice
+        )
+        let route = router.route(for: text)
+
         let options = VoxCPMGenerationOptions(
-            voice: selectedVoice.isEmpty ? "default" : selectedVoice,
-            language: language,
-            quality: VoxCPMSettings.shared.quality,
+            voice: route.voice,
+            language: route.language,
+            quality: settings.quality,
             speed: selectedSpeed,
             seed: nil
         )

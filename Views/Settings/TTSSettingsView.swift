@@ -450,6 +450,7 @@ struct VoxCPMEngineSection: View {
     @State private var settings = VoxCPMSettings.shared
     @State private var manager = VoxCPMEngineManager.shared
     @State private var isStarting = false
+    @State private var showingVoiceManager = false
 
     var body: some View {
         Section {
@@ -517,6 +518,17 @@ struct VoxCPMEngineSection: View {
                 }
             }
 
+            Picker("Language mode", selection: $settings.languageMode) {
+                ForEach(VoxCPMLanguage.allCases) { mode in
+                    Text(mode.displayName).tag(mode)
+                }
+            }
+            Text("Automatic detects French or English from the text on its own — no need to choose.")
+                .font(.caption2)
+                .foregroundColor(.secondary)
+
+            Button("Manage Voices…") { showingVoiceManager = true }
+
             TextField("Launch command (optional)", text: $settings.serverLaunchCommand)
                 .font(.caption)
         } header: {
@@ -527,6 +539,9 @@ struct VoxCPMEngineSection: View {
         }
         .task {
             await manager.refreshHealth()
+        }
+        .sheet(isPresented: $showingVoiceManager) {
+            VoxCPMVoiceManagerView()
         }
     }
 

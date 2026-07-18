@@ -480,3 +480,67 @@
 "── Enhanced ──" = "── Enhanced ──";
 "── Standard ──" = "── Standard ──";
 "N/A" = "N/A";
+
+/* ===== VoxCPM2 Local Engine ===== */
+"Fully local neural TTS with multilingual voice cloning" = "Synthèse vocale neuronale entièrement locale avec clonage de voix multilingue";
+"VoxCPM2 Local Engine" = "Moteur local VoxCPM2";
+"Local neural TTS" = "Synthèse vocale neuronale locale";
+"Engine" = "Moteur";
+"Backend" = "Serveur";
+"Device" = "Périphérique";
+"Sample rate" = "Fréquence d'échantillonnage";
+"Start Engine" = "Démarrer le moteur";
+"Restart Engine" = "Redémarrer le moteur";
+"Refresh" = "Actualiser";
+"Quality" = "Qualité";
+"Balanced" = "Équilibré";
+"Default French voice" = "Voix française par défaut";
+"Default English voice" = "Voix anglaise par défaut";
+"Language mode" = "Mode de langue";
+"Automatic detects French or English from the text on its own — no need to choose." = "Le mode automatique détecte le français ou l'anglais à partir du texte, sans intervention.";
+"Manage Voices…" = "Gérer les voix…";
+"Launch command (optional)" = "Commande de lancement (facultatif)";
+"Fully local neural TTS. Text and audio never leave your Mac. If the engine is unavailable, playback falls back to macOS Native." = "Synthèse vocale neuronale entièrement locale. Le texte et l'audio ne quittent jamais votre Mac. Si le moteur est indisponible, la lecture bascule vers la synthèse native de macOS.";
+
+/* Engine states */
+"Unknown" = "Inconnu";
+"Not running" = "Arrêté";
+"Starting…" = "Démarrage…";
+"Loading model…" = "Chargement du modèle…";
+"Ready" = "Prêt";
+"Generating…" = "Génération…";
+"Crashed" = "Interrompu";
+"Unavailable" = "Indisponible";
+
+/* Language modes */
+"Automatic" = "Automatique";
+"English" = "Anglais";
+"French (Canada)" = "Français (Canada)";
+"English (Canada)" = "Anglais (Canada)";
+
+/* Voice manager */
+"Manage Voices" = "Gérer les voix";
+"Voices" = "Voix";
+"Add a Voice" = "Ajouter une voix";
+"Name" = "Nom";
+"Primary language" = "Langue principale";
+"Type" = "Type";
+"Cloned from reference audio" = "Cloné à partir d'un audio de référence";
+"Designed from description" = "Conçu à partir d'une description";
+"Choose Audio File…" = "Choisir un fichier audio…";
+"Record" = "Enregistrer";
+"Stop Recording" = "Arrêter l'enregistrement";
+"Reference transcript (optional)" = "Transcription de référence (facultatif)";
+"Voice description (e.g. warm young woman)" = "Description de la voix (p. ex. jeune femme chaleureuse)";
+"I confirm I have the right to use this reference audio." = "Je confirme avoir le droit d'utiliser cet audio de référence.";
+"Add Voice" = "Ajouter la voix";
+"Reference audio never leaves your Mac. Québec-French and Canadian-English voices are just profiles tagged fr-CA / en-CA." = "L'audio de référence ne quitte jamais votre Mac. Les voix en français québécois et en anglais canadien sont simplement des profils étiquetés fr-CA / en-CA.";
+"Preview" = "Aperçu";
+"Set as French default" = "Définir comme voix française par défaut";
+"Set as English default" = "Définir comme voix anglaise par défaut";
+"Delete" = "Supprimer";
+"Done" = "Terminé";
+"Voice deleted." = "Voix supprimée.";
+"Could not read the selected file." = "Impossible de lire le fichier sélectionné.";
+"Microphone access denied" = "Accès au microphone refusé";
+"Failed to start recording" = "Échec du démarrage de l'enregistrement";

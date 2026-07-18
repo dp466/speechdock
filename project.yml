@@ -5,7 +5,7 @@ options:
     macOS: "14.0"
   xcodeVersion: "26.0"
   developmentLanguage: en
-  knownRegions: [en, ja]
+  knownRegions: [en, ja, fr, de, ko, zh-Hans]
 
 packages:
   HotKey:

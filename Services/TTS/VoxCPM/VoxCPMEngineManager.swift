@@ -100,6 +100,33 @@ final class VoxCPMEngineManager {
         cachedVoices = voices
     }
 
+    // MARK: - Voice management
+
+    @discardableResult
+    func importVoice(displayName: String, language: String, kind: String, audioData: Data?,
+                     filename: String?, transcript: String?, control: String?, notes: String?,
+                     consentConfirmed: Bool) async throws -> VoxCPMVoiceProfile {
+        let profile = try await client.importVoice(
+            displayName: displayName, language: language, kind: kind, audioData: audioData,
+            filename: filename, transcript: transcript, control: control, notes: notes,
+            consentConfirmed: consentConfirmed)
+        await refreshVoices()
+        return profile
+    }
+
+    func deleteVoice(id: String) async throws {
+        try await client.deleteVoice(id: id)
+        await refreshVoices()
+    }
+
+    /// Synthesize a short preview clip for a voice and return the WAV bytes.
+    func previewVoice(_ voiceId: String, text: String, quality: VoxCPMQuality) async throws -> Data {
+        var options = VoxCPMGenerationOptions()
+        options.voice = voiceId
+        options.quality = quality
+        return try await client.synthesize(text: text, model: settings.model, options: options)
+    }
+
     // MARK: - Polling
 
     func startPolling(interval: TimeInterval = 3.0) {
