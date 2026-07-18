@@ -46,6 +46,7 @@ final class VoxCPMProviderTests: XCTestCase {
         XCTAssertEqual(s1.host, "127.0.0.1")
         XCTAssertEqual(s1.port, 8757)
         XCTAssertEqual(s1.quality, .balanced)
+        XCTAssertEqual(s1.defaultFrenchVoice, "female-warm")
 
         s1.port = 9999
         s1.quality = .quality

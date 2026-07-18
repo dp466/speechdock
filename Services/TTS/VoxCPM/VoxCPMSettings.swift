@@ -43,8 +43,10 @@ final class VoxCPMSettings {
         port = storedPort == 0 ? 8757 : storedPort
         model = (defaults.string(forKey: Key.model)) ?? "openbmb/VoxCPM2"
         quality = VoxCPMQuality(rawValue: defaults.string(forKey: Key.quality) ?? "") ?? .balanced
-        defaultFrenchVoice = (defaults.string(forKey: Key.defaultFrenchVoice)) ?? "default"
-        defaultEnglishVoice = (defaults.string(forKey: Key.defaultEnglishVoice)) ?? "default"
+        // Default to the built-in designed female voice — it sounds far more natural than the
+        // no-reference "default" voice. Users can change this or clone their own.
+        defaultFrenchVoice = (defaults.string(forKey: Key.defaultFrenchVoice)) ?? "female-warm"
+        defaultEnglishVoice = (defaults.string(forKey: Key.defaultEnglishVoice)) ?? "female-warm"
         languageMode = VoxCPMLanguage(rawValue: defaults.string(forKey: Key.languageMode) ?? "") ?? .auto
         serverLaunchCommand = (defaults.string(forKey: Key.serverLaunchCommand)) ?? ""
         isLoading = false
