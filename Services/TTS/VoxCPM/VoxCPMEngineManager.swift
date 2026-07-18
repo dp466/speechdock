@@ -56,12 +56,20 @@ final class VoxCPMEngineManager {
     private(set) var version: String?
     private(set) var lastError: String?
     private(set) var cachedVoices: [VoxCPMVoiceProfile] = [.builtinDefault]
+    private(set) var model: VoxCPMModelStatus?
+    /// True while this manager is supervising a child engine process (Phase 5 app-managed start).
+    private(set) var isManagingProcess = false
 
     private let settings: VoxCPMSettings
+    private let processManager = VoxCPMProcessManager()
     private var pollTask: Task<Void, Never>?
 
     init(settings: VoxCPMSettings = .shared) {
         self.settings = settings
+        processManager.onExit = { [weak self] code in
+            guard let self else { return }
+            if code != 0 { self.lastError = "Engine process exited (code \(code))" }
+        }
     }
 
     private var client: VoxCPMClient {
@@ -146,32 +154,48 @@ final class VoxCPMEngineManager {
 
     // MARK: - Start / restart (Phase-2 convenience)
 
-    /// Run the user's configured launch command (if any) to start the engine, then poll for readiness.
-    /// With no command configured, this is a no-op beyond a health refresh — the user starts the engine
-    /// manually via `scripts/run_server.sh`.
+    // MARK: - Model download
+
+    @discardableResult
+    func refreshModelStatus() async -> VoxCPMModelStatus? {
+        model = try? await client.modelStatus()
+        return model
+    }
+
+    /// Trigger an in-app model download and poll status until it finishes (or errors).
+    func downloadModel() async {
+        model = try? await client.startModelDownload()
+        while model?.isDownloading == true {
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            model = try? await client.modelStatus()
+        }
+    }
+
+    // MARK: - Start / restart (app-managed child process)
+
+    /// Start the engine as an app-managed child process using the configured launch command, then poll
+    /// for readiness. With no command configured this is a no-op beyond a health refresh — the user
+    /// starts the engine manually via `scripts/run_server.sh`.
     func start() async {
         let command = settings.serverLaunchCommand.trimmingCharacters(in: .whitespacesAndNewlines)
         if !command.isEmpty {
             state = .starting
-            launch(command: command)
+            isManagingProcess = true
+            processManager.start(command: command)
         }
         await waitUntilReady()
     }
 
     func restart() async {
+        if isManagingProcess { processManager.stop() }
         await start()
     }
 
-    private func launch(command: String) {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/bin/zsh")
-        process.arguments = ["-lc", command]
-        do {
-            try process.run()
-        } catch {
-            lastError = "Failed to launch engine: \(error.localizedDescription)"
-            state = .unavailable(lastError ?? "")
-        }
+    /// Stop the app-managed engine process (if any) and health polling.
+    func stopManagedEngine() {
+        processManager.stop()
+        isManagingProcess = false
+        stopPolling()
     }
 
     private func waitUntilReady(timeout: TimeInterval = 90) async {

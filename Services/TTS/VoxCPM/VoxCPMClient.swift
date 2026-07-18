@@ -28,6 +28,27 @@ enum VoxCPMError: LocalizedError {
     }
 }
 
+/// Model presence/download snapshot from `GET /v1/model/status`.
+struct VoxCPMModelStatus: Decodable, Equatable {
+    let modelId: String
+    let downloaded: Bool
+    let state: String       // unknown | not_downloaded | downloading | ready | error
+    let sizeBytes: Int
+    let numFiles: Int
+    let error: String?
+
+    enum CodingKeys: String, CodingKey {
+        case modelId = "model_id"
+        case downloaded, state
+        case sizeBytes = "size_bytes"
+        case numFiles = "num_files"
+        case error
+    }
+
+    var isDownloading: Bool { state == "downloading" }
+    var sizeGB: Double { Double(sizeBytes) / 1_000_000_000 }
+}
+
 /// Health snapshot from `GET /health`.
 struct VoxCPMHealth: Decodable {
     let status: String
@@ -103,6 +124,28 @@ struct VoxCPMClient {
         }
         do {
             return try JSONDecoder().decode(VoxCPMHealth.self, from: data)
+        } catch {
+            throw VoxCPMError.decoding(error.localizedDescription)
+        }
+    }
+
+    /// `GET /v1/model/status`.
+    func modelStatus() async throws -> VoxCPMModelStatus {
+        try await decode(VoxCPMModelStatus.self, path: "v1/model/status")
+    }
+
+    /// `POST /v1/model/download` — starts a background download; returns the current status.
+    func startModelDownload() async throws -> VoxCPMModelStatus {
+        try await decode(VoxCPMModelStatus.self, path: "v1/model/download", method: "POST", body: Data("{}".utf8))
+    }
+
+    private func decode<T: Decodable>(_ type: T.Type, path: String, method: String = "GET",
+                                      body: Data? = nil) async throws -> T {
+        let req = try makeRequest(path: path, method: method, body: body)
+        let (data, http) = try await send(req)
+        try Self.throwIfError(http, data)
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
         } catch {
             throw VoxCPMError.decoding(error.localizedDescription)
         }

@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 struct TTSSettingsView: View {
     @Environment(AppState.self) var appState
@@ -450,6 +451,7 @@ struct VoxCPMEngineSection: View {
     @State private var settings = VoxCPMSettings.shared
     @State private var manager = VoxCPMEngineManager.shared
     @State private var isStarting = false
+    @State private var isDownloading = false
     @State private var showingVoiceManager = false
 
     var body: some View {
@@ -472,6 +474,8 @@ struct VoxCPMEngineSection: View {
             if let sr = manager.sampleRate {
                 LabeledContent("Sample rate", value: "\(sr) Hz")
             }
+
+            modelRow
 
             HStack {
                 Button {
@@ -527,7 +531,12 @@ struct VoxCPMEngineSection: View {
                 .font(.caption2)
                 .foregroundColor(.secondary)
 
-            Button("Manage Voices…") { showingVoiceManager = true }
+            HStack {
+                Button("Manage Voices…") { showingVoiceManager = true }
+                Spacer()
+                Button("Open Logs") { openLogs() }
+                    .buttonStyle(.borderless)
+            }
 
             TextField("Launch command (optional)", text: $settings.serverLaunchCommand)
                 .font(.caption)
@@ -543,6 +552,47 @@ struct VoxCPMEngineSection: View {
         .sheet(isPresented: $showingVoiceManager) {
             VoxCPMVoiceManagerView()
         }
+    }
+
+    @ViewBuilder private var modelRow: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text("Model download")
+                Spacer()
+                if let m = manager.model {
+                    if m.downloaded {
+                        Text(String(format: "Downloaded (%.1f GB)", m.sizeGB))
+                            .font(.caption).foregroundColor(.secondary)
+                    } else if m.isDownloading || isDownloading {
+                        HStack(spacing: 6) {
+                            ProgressView().scaleEffect(0.6).frame(width: 14, height: 14)
+                            Text(m.sizeBytes > 0 ? String(format: "%.1f GB…", m.sizeGB) : "Starting…")
+                                .font(.caption).foregroundColor(.secondary)
+                        }
+                    } else {
+                        Button("Download") {
+                            Task {
+                                isDownloading = true
+                                await manager.downloadModel()
+                                isDownloading = false
+                            }
+                        }
+                        .disabled(isDownloading)
+                    }
+                } else {
+                    Text("—").font(.caption).foregroundColor(.secondary)
+                }
+            }
+            Text("Downloaded once (~5 GB) from Hugging Face; then fully offline. Weights are not bundled with the app.")
+                .font(.caption2).foregroundColor(.secondary)
+        }
+        .task { await manager.refreshModelStatus() }
+    }
+
+    private func openLogs() {
+        let url = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Logs/ScreenVoice", isDirectory: true)
+        NSWorkspace.shared.open(url)
     }
 
     @ViewBuilder private var statusBadge: some View {

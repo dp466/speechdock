@@ -198,6 +198,41 @@ final class VoxCPMProviderTests: XCTestCase {
         try await client.deleteVoice(id: "voice-abc") // must not throw
     }
 
+    func testClientModelStatusDecodes() async throws {
+        MockURLProtocol.handler = { req in
+            XCTAssertTrue(req.url!.path.hasSuffix("/v1/model/status"))
+            let json = #"{"model_id":"openbmb/VoxCPM2","downloaded":true,"state":"ready","size_bytes":4960000000,"num_files":9,"error":null}"#
+            return (Self.http(req, 200), Data(json.utf8))
+        }
+        let client = VoxCPMClient(baseURL: URL(string: "http://127.0.0.1:8757")!,
+                                  tokenProvider: { "tok" }, session: mockSession())
+        let status = try await client.modelStatus()
+        XCTAssertTrue(status.downloaded)
+        XCTAssertEqual(status.state, "ready")
+        XCTAssertEqual(status.numFiles, 9)
+        XCTAssertEqual(status.sizeGB, 4.96, accuracy: 0.01)
+    }
+
+    // MARK: - Process manager
+
+    func testProcessManagerReportsExitCode() async {
+        let pm = VoxCPMProcessManager()
+        let exited = expectation(description: "process exited")
+        var code: Int32?
+        pm.onExit = { c in code = c; exited.fulfill() }
+        pm.maxAutoRestarts = 0 // don't restart on this deliberate exit
+        pm.start(command: "exit 3")
+        await fulfillment(of: [exited], timeout: 5)
+        XCTAssertEqual(code, 3)
+        XCTAssertFalse(pm.isRunning)
+    }
+
+    func testProcessManagerStartIgnoresEmptyCommand() {
+        let pm = VoxCPMProcessManager()
+        pm.start(command: "   ")
+        XCTAssertFalse(pm.isRunning)
+    }
+
     private static func http(_ req: URLRequest, _ code: Int) -> HTTPURLResponse {
         HTTPURLResponse(url: req.url!, statusCode: code, httpVersion: nil, headerFields: nil)!
     }
