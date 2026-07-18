@@ -406,7 +406,15 @@ struct TTSFloatingView: View {
     @State private var editableText: String = ""
     @State private var forceTextUpdate: Bool = false  // Force text view update (for hotkey captures)
     @State private var isDragOver: Bool = false  // Track drag over state for text file drop
+    /// Voice/output controls are collapsed by default to keep the header uncluttered.
+    @AppStorage("ttsPanelShowOptions") private var showOptions: Bool = false
     @StateObject private var shortcutManager = ShortcutSettingsManager.shared
+
+    /// One-line summary of the current voice settings, shown when the options row is collapsed.
+    private var optionsSummary: String {
+        let speed = String(format: "%.2fx", appState.selectedTTSSpeed)
+        return "\(appState.selectedTTSProvider.rawValue) · \(speed)"
+    }
 
     /// Hint shown in the empty placeholder describing available inline tags for the
     /// current provider. Returns nil when the provider doesn't support inline tags.
@@ -542,8 +550,9 @@ struct TTSFloatingView: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            // Header
-            HStack {
+            // Header — kept intentionally sparse: status, title, a compact summary, and one toggle.
+            // The voice/output controls live in the collapsible options row below.
+            HStack(spacing: 10) {
                 // Only show close button in floating mode (standard window has title bar close button)
                 if isFloatingStyle {
                     Button(action: {
@@ -564,21 +573,55 @@ struct TTSFloatingView: View {
                     .font(.headline)
                 Spacer()
 
-                // Provider selector
-                TTSProviderSelector(appState: appState)
-                    .disabled(appState.ttsState == .speaking || appState.ttsState == .loading)
+                if !showOptions {
+                    Text(optionsSummary)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
 
-                // Voice selector
-                TTSVoiceSelector(appState: appState)
-                    .disabled(appState.ttsState == .speaking || appState.ttsState == .loading)
+                Button {
+                    withAnimation(.easeInOut(duration: 0.18)) { showOptions.toggle() }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "slider.horizontal.3")
+                        Image(systemName: showOptions ? "chevron.up" : "chevron.down")
+                            .font(.caption2)
+                    }
+                    .foregroundColor(.secondary)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .focusEffectDisabled()
+                .help(showOptions ? "Hide voice & output options" : "Show voice & output options")
+            }
 
-                // Speed selector - NOT disabled during playback (supports real-time adjustment)
-                TTSSpeedSelector(appState: appState)
-                    .disabled(appState.ttsState == .loading)
+            // Collapsible options row
+            if showOptions {
+                HStack(spacing: 14) {
+                    TTSProviderSelector(appState: appState)
+                        .disabled(appState.ttsState == .speaking || appState.ttsState == .loading)
 
-                // Output selector
-                TTSAudioOutputSelector(appState: appState)
-                    .disabled(appState.ttsState == .speaking || appState.ttsState == .loading)
+                    TTSVoiceSelector(appState: appState)
+                        .disabled(appState.ttsState == .speaking || appState.ttsState == .loading)
+
+                    // Speed is adjustable during playback (real-time rate change)
+                    TTSSpeedSelector(appState: appState)
+                        .disabled(appState.ttsState == .loading)
+
+                    TTSAudioOutputSelector(appState: appState)
+                        .disabled(appState.ttsState == .speaking || appState.ttsState == .loading)
+
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Color.primary.opacity(0.05))
+                )
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
 
             // Content area - always editable TextEditor
@@ -588,7 +631,7 @@ struct TTSFloatingView: View {
             actionButtons
         }
         .padding(16)
-        .frame(minWidth: 820, idealWidth: 900, maxWidth: .infinity)
+        .frame(minWidth: 680, idealWidth: 820, maxWidth: .infinity)
         .background(panelBackground)
         .cornerRadius(panelCornerRadius)
         .onAppear {
