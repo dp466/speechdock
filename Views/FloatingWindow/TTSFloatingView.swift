@@ -1285,7 +1285,7 @@ struct TTSProviderSelector: View {
             return appState.apiKeyManager.hasAPIKey(for: .elevenLabs)
         case .grok:
             return appState.apiKeyManager.hasAPIKey(for: .grok)
-        case .macOS:
+        case .macOS, .voxCPM:
             return true
         }
     }

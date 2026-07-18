@@ -1264,8 +1264,29 @@ final class AppState {
             } catch {
                 dprint("TTS: Error occurred: \(error)")
 
-                ttsState = .error(error.localizedDescription)
+                // If the local VoxCPM engine is unavailable, degrade cleanly to macOS Native TTS —
+                // never silently to a cloud provider. Preserves the text currently being read.
+                if selectedTTSProvider == .voxCPM, VoxCPMTTS.shouldFallBackToNative(for: error) {
+                    await fallbackToMacOSNative(text: processedText, reason: error.localizedDescription)
+                } else {
+                    ttsState = .error(error.localizedDescription)
+                }
             }
+        }
+    }
+
+    /// Fall back to macOS Native TTS when the VoxCPM local engine can't serve the request.
+    private func fallbackToMacOSNative(text: String, reason: String) async {
+        dprint("TTS: VoxCPM unavailable (\(reason)); falling back to macOS Native")
+        let native = MacOSTTS()
+        native.delegate = self
+        native.selectedSpeed = selectedTTSSpeed
+        native.audioOutputDeviceUID = selectedAudioOutputDeviceUID
+        ttsService = native
+        do {
+            try await native.speak(text: text)
+        } catch {
+            ttsState = .error(error.localizedDescription)
         }
     }
 
@@ -1543,8 +1564,8 @@ final class AppState {
             if translationProvider != .grok {
                 translationProvider = .grok
             }
-        case .elevenLabs, .macOS:
-            // ElevenLabs/macOS don't have corresponding translation providers, use macOS
+        case .elevenLabs, .macOS, .voxCPM:
+            // ElevenLabs/macOS/VoxCPM have no corresponding translation provider, use macOS
             if translationProvider != .macOS {
                 translationProvider = .macOS
             }
@@ -2146,7 +2167,7 @@ final class AppState {
             return apiKeyManager.hasAPIKey(for: .elevenLabs)
         case .grok:
             return apiKeyManager.hasAPIKey(for: .grok)
-        case .macOS:
+        case .macOS, .voxCPM:
             return true
         }
     }

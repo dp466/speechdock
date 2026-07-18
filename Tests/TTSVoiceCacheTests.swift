@@ -77,11 +77,12 @@ final class TTSVoiceCacheTests: XCTestCase {
         // Verify all providers are available for cache iteration
         let providers = TTSProvider.allCases
         XCTAssertTrue(providers.contains(.macOS))
+        XCTAssertTrue(providers.contains(.voxCPM))
         XCTAssertTrue(providers.contains(.openAI))
         XCTAssertTrue(providers.contains(.gemini))
         XCTAssertTrue(providers.contains(.elevenLabs))
         XCTAssertTrue(providers.contains(.grok))
-        XCTAssertEqual(providers.count, 5)
+        XCTAssertEqual(providers.count, 6)
     }
 
     func testTTSProviderRawValues() {

@@ -150,6 +150,7 @@ protocol TTSDelegate: AnyObject {
 /// TTS provider types
 enum TTSProvider: String, CaseIterable, Identifiable, Codable {
     case macOS = "macOS"
+    case voxCPM = "VoxCPM2 Local"
     case openAI = "OpenAI"
     case gemini = "Gemini"
     case elevenLabs = "ElevenLabs"
@@ -160,6 +161,7 @@ enum TTSProvider: String, CaseIterable, Identifiable, Codable {
     var envKeyName: String? {
         switch self {
         case .macOS: return nil
+        case .voxCPM: return nil
         case .openAI: return "OPENAI_API_KEY"
         case .gemini: return "GEMINI_API_KEY"
         case .elevenLabs: return "ELEVENLABS_API_KEY"
@@ -168,12 +170,24 @@ enum TTSProvider: String, CaseIterable, Identifiable, Codable {
     }
 
     var requiresAPIKey: Bool {
-        self != .macOS
+        switch self {
+        case .macOS, .voxCPM: return false
+        case .openAI, .gemini, .elevenLabs, .grok: return true
+        }
+    }
+
+    /// Local, offline providers that keep all text and audio on the Mac.
+    var isLocal: Bool {
+        switch self {
+        case .macOS, .voxCPM: return true
+        case .openAI, .gemini, .elevenLabs, .grok: return false
+        }
     }
 
     var description: String {
         switch self {
         case .macOS: return NSLocalizedString("Local (offline, fast)", comment: "TTS provider description")
+        case .voxCPM: return NSLocalizedString("Fully local neural TTS with multilingual voice cloning", comment: "TTS provider description")
         case .openAI: return NSLocalizedString("OpenAI TTS (high quality)", comment: "TTS provider description")
         case .gemini: return NSLocalizedString("Gemini TTS (multilingual)", comment: "TTS provider description")
         case .elevenLabs: return NSLocalizedString("ElevenLabs (natural voices)", comment: "TTS provider description")
@@ -189,6 +203,8 @@ enum TTSFactory {
         switch provider {
         case .macOS:
             return MacOSTTS()
+        case .voxCPM:
+            return VoxCPMTTS()
         case .openAI:
             return OpenAITTS()
         case .gemini:

@@ -31,6 +31,10 @@ struct TTSSettingsView: View {
                 Text("Provider & Voice")
             }
 
+            if appState.selectedTTSProvider == .voxCPM {
+                VoxCPMEngineSection()
+            }
+
             Section {
                 TTSSpeedSlider(appState: appState)
             } header: {
@@ -71,7 +75,7 @@ struct TTSSettingsView: View {
             return appState.apiKeyManager.hasAPIKey(for: .elevenLabs)
         case .grok:
             return appState.apiKeyManager.hasAPIKey(for: .grok)
-        case .macOS:
+        case .macOS, .voxCPM:
             return true
         }
     }
@@ -288,7 +292,7 @@ struct TTSSpeedSlider: View {
             // gemini-3.1-flash-tts-preview has no speed parameter (pace prompts trigger
             // classifier rejections). Older 2.5 TTS REST models do support a pace prefix.
             return appState.selectedTTSModel != "gemini-3.1-flash-tts-preview"
-        case .macOS, .elevenLabs:
+        case .macOS, .elevenLabs, .voxCPM:
             return true
         }
     }
@@ -309,7 +313,7 @@ struct TTSSpeedSlider: View {
             return "ElevenLabs has limited speed range (0.7x-1.2x mapped)."
         case .grok:
             return "Speed control not available. Wrap text with <slow> or <fast> for pacing effects."
-        case .macOS:
+        case .macOS, .voxCPM:
             return nil
         }
     }
@@ -374,6 +378,8 @@ struct TTSSpeedSlider: View {
             return "Adjust playback speed (actual range: 0.7x–1.2x)"
         case .macOS:
             return "Adjust playback speed"
+        case .voxCPM:
+            return "Adjust playback speed (applied locally)"
         case .grok:
             return "Grok TTS does not support speed control"
         }
@@ -435,6 +441,112 @@ struct AudioOutputDevicePicker: View {
 
         if !availableDevices.contains(where: { $0.uid == appState.selectedAudioOutputDeviceUID }) {
             appState.selectedAudioOutputDeviceUID = ""
+        }
+    }
+}
+
+/// VoxCPM2 local-engine settings: status, backend, model/device, quality, and default fr/en voices.
+struct VoxCPMEngineSection: View {
+    @State private var settings = VoxCPMSettings.shared
+    @State private var manager = VoxCPMEngineManager.shared
+    @State private var isStarting = false
+
+    var body: some View {
+        Section {
+            HStack {
+                Text("Engine")
+                Spacer()
+                statusBadge
+            }
+            if let detail = manager.lastError, !detail.isEmpty, !manager.isReady {
+                Text(detail)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .lineLimit(3)
+            }
+
+            LabeledContent("Backend", value: "\(settings.host):\(settings.port)")
+            LabeledContent("Model", value: manager.modelId ?? settings.model)
+            LabeledContent("Device", value: manager.device ?? "—")
+            if let sr = manager.sampleRate {
+                LabeledContent("Sample rate", value: "\(sr) Hz")
+            }
+
+            HStack {
+                Button {
+                    Task {
+                        isStarting = true
+                        await manager.restart()
+                        isStarting = false
+                    }
+                } label: {
+                    if isStarting {
+                        ProgressView().scaleEffect(0.6).frame(width: 16, height: 16)
+                    } else {
+                        Text(manager.isReady ? "Restart Engine" : "Start Engine")
+                    }
+                }
+                .disabled(isStarting)
+
+                Button("Refresh") {
+                    Task { await manager.refreshHealth() }
+                }
+                .buttonStyle(.borderless)
+            }
+
+            if settings.serverLaunchCommand.trimmingCharacters(in: .whitespaces).isEmpty {
+                Text("No launch command set — start the engine manually with scripts/run_server.sh, or set a command below.")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+
+            Picker("Quality", selection: $settings.quality) {
+                ForEach(VoxCPMQuality.allCases) { q in
+                    Text(q.displayName).tag(q)
+                }
+            }
+
+            Picker("Default French voice", selection: $settings.defaultFrenchVoice) {
+                ForEach(manager.cachedVoices) { v in
+                    Text(v.displayName).tag(v.id)
+                }
+            }
+            Picker("Default English voice", selection: $settings.defaultEnglishVoice) {
+                ForEach(manager.cachedVoices) { v in
+                    Text(v.displayName).tag(v.id)
+                }
+            }
+
+            TextField("Launch command (optional)", text: $settings.serverLaunchCommand)
+                .font(.caption)
+        } header: {
+            Text("VoxCPM2 Local Engine")
+        } footer: {
+            Text("Fully local neural TTS. Text and audio never leave your Mac. If the engine is unavailable, playback falls back to macOS Native.")
+                .font(.caption2)
+        }
+        .task {
+            await manager.refreshHealth()
+        }
+    }
+
+    @ViewBuilder private var statusBadge: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(statusColor)
+                .frame(width: 8, height: 8)
+            Text(manager.state.displayName)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+    }
+
+    private var statusColor: Color {
+        switch manager.state {
+        case .ready, .generating: return .green
+        case .starting, .loadingModel: return .orange
+        case .crashed, .unavailable: return .red
+        case .notRunning, .unknown: return .secondary
         }
     }
 }
